@@ -6,41 +6,58 @@ knitr::opts_chunk$set(
 
 ## -----------------------------------------------------------------------------
 library(RobinCar2)
-head(dummy_data)
+head(glm_data)
 
 ## -----------------------------------------------------------------------------
 robin_lm(y ~ treatment * s1 + covar,
-  data = dummy_data,
+  data = glm_data,
   treatment = treatment ~ pb(s1)
 )
 
 ## -----------------------------------------------------------------------------
 robin_lm(y ~ treatment + s1 + covar,
-  data = dummy_data,
+  data = glm_data,
   treatment = treatment ~ pb(s1),
   vcov = "vcovHC"
 )
 
 ## -----------------------------------------------------------------------------
 robin_glm(y_b ~ treatment * s1 + covar,
-  data = dummy_data,
+  data = glm_data,
   treatment = treatment ~ pb(s1),
   family = binomial(link = "logit")
 )
 
 ## -----------------------------------------------------------------------------
-dummy_data$y_count <- rpois(nrow(dummy_data), lambda = 20)
+glm_data$y_count <- rpois(nrow(glm_data), lambda = 20)
 robin_glm(
   y_count ~ treatment * s1 + covar,
-  data = dummy_data,
+  data = glm_data,
   treatment = treatment ~ pb(s1),
   family = MASS::negative.binomial(theta = 1)
 )
 
 ## -----------------------------------------------------------------------------
 robin_glm(y_b ~ treatment * s1 + covar,
-  data = dummy_data,
+  data = glm_data,
   treatment = treatment ~ ps(s1),
   family = binomial(link = "logit")
 )
+
+## -----------------------------------------------------------------------------
+robin_res <- robin_glm(y_b ~ treatment * s1 + covar,
+  data = glm_data,
+  treatment = treatment ~ ps(s1),
+  family = binomial(link = "logit"),
+  contrast = "log_risk_ratio"
+)
+robin_res
+
+## -----------------------------------------------------------------------------
+confint(robin_res$marginal_mean, parm = 1:2, level = 0.7)
+confint(robin_res$marginal_mean, level = 0.7)
+
+## -----------------------------------------------------------------------------
+confint(robin_res$contrast)
+confint(robin_res$contrast, transform = identity)
 

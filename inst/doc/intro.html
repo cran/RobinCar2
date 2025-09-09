@@ -355,6 +355,8 @@ Effect for Binary Outcomes</a></li>
 Counts</a></li>
 <li><a href="#using-different-covariate-adaptive-randomization-schema" id="toc-using-different-covariate-adaptive-randomization-schema">Using
 Different Covariate-Adaptive Randomization Schema</a></li>
+<li><a href="#obtain-the-confidence-intervals-for-the-marginal-means-and-contrast" id="toc-obtain-the-confidence-intervals-for-the-marginal-means-and-contrast">Obtain
+the Confidence Intervals for the Marginal Means and contrast</a></li>
 </ul></li>
 </ul>
 </div>
@@ -369,17 +371,22 @@ under different randomization schema.</p>
 the randomization scheme, will produce an object of class
 <code>treatment_effect</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(RobinCar2)</span>
-<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="fu">head</span>(dummy_data)</span>
-<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt;   id treatment s1 s2      covar           y y_b</span></span>
-<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; 1  1       pbo  b  c  0.5119022 -0.02761963   0</span></span>
-<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt; 2  2       pbo  a  c -0.7941720  0.49919508   0</span></span>
-<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt; 3  3      trt1  b  d  0.8988804  0.48037375   0</span></span>
-<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="co">#&gt; 4  4      trt2  b  c -0.4821317  0.67490126   1</span></span>
-<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt; 5  5      trt1  a  d -0.2285514  0.55499267   0</span></span>
-<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; 6  6      trt2  a  c  0.2742069  2.39830584   1</span></span></code></pre></div>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a><span class="co">#&gt; Attaching package: &#39;RobinCar2&#39;</span></span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a><span class="co">#&gt; The following object is masked from &#39;package:base&#39;:</span></span>
+<span id="cb1-5"><a href="#cb1-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb1-6"><a href="#cb1-6" tabindex="-1"></a><span class="co">#&gt;     table</span></span>
+<span id="cb1-7"><a href="#cb1-7" tabindex="-1"></a><span class="fu">head</span>(glm_data)</span>
+<span id="cb1-8"><a href="#cb1-8" tabindex="-1"></a><span class="co">#&gt;   id treatment s1 s2      covar           y y_b</span></span>
+<span id="cb1-9"><a href="#cb1-9" tabindex="-1"></a><span class="co">#&gt; 1  1       pbo  b  c  0.5119022 -0.02761963   0</span></span>
+<span id="cb1-10"><a href="#cb1-10" tabindex="-1"></a><span class="co">#&gt; 2  2       pbo  a  c -0.7941720  0.49919508   0</span></span>
+<span id="cb1-11"><a href="#cb1-11" tabindex="-1"></a><span class="co">#&gt; 3  3      trt1  b  d  0.8988804  0.48037375   0</span></span>
+<span id="cb1-12"><a href="#cb1-12" tabindex="-1"></a><span class="co">#&gt; 4  4      trt2  b  c -0.4821317  0.67490126   1</span></span>
+<span id="cb1-13"><a href="#cb1-13" tabindex="-1"></a><span class="co">#&gt; 5  5      trt1  a  d -0.2285514  0.55499267   0</span></span>
+<span id="cb1-14"><a href="#cb1-14" tabindex="-1"></a><span class="co">#&gt; 6  6      trt2  a  c  0.2742069  2.39830584   1</span></span></code></pre></div>
 <div id="data-introduction" class="section level2">
 <h2>Data Introduction</h2>
-<p>In the <code>dummy_data</code>, we have the following columns:</p>
+<p>In the <code>glm_data</code>, we have the following columns:</p>
 <ol style="list-style-type: decimal">
 <li><code>id</code> is the patient identifier.</li>
 <li><code>treatment</code> is the treatment assignment.</li>
@@ -400,7 +407,7 @@ stratified by <code>s1</code>. The model formula also includes the
 treatment by stratification interaction as
 <code>y ~ treatment * s1 + covar</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">robin_lm</span>(y <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
-<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">data =</span> dummy_data,</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">pb</span>(s1)</span>
 <span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>)</span>
 <span id="cb2-5"><a href="#cb2-5" tabindex="-1"></a><span class="co">#&gt; Model        :  y ~ treatment * s1 + covar </span></span>
@@ -424,7 +431,7 @@ treatment by stratification interaction as
 formula should not contain the treatment by stratification (covariate)
 interaction.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">robin_lm</span>(y <span class="sc">~</span> treatment <span class="sc">+</span> s1 <span class="sc">+</span> covar,</span>
-<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">data =</span> dummy_data,</span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">pb</span>(s1),</span>
 <span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="at">vcov =</span> <span class="st">&quot;vcovHC&quot;</span></span>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>)</span>
@@ -458,7 +465,7 @@ stratification interaction as <code>y_b ~ treatment * s1 + covar</code>.
 Note here we need to specify <code>family</code> to be
 <code>binomial(link = &quot;logit&quot;)</code>.</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="fu">robin_glm</span>(y_b <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
-<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">data =</span> dummy_data,</span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">pb</span>(s1),</span>
 <span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">&quot;logit&quot;</span>)</span>
 <span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a>)</span>
@@ -471,7 +478,7 @@ Note here we need to specify <code>family</code> to be
 <span id="cb4-12"><a href="#cb4-12" tabindex="-1"></a><span class="co">#&gt; trt1 0.580696 0.034418 0.513238 0.6482</span></span>
 <span id="cb4-13"><a href="#cb4-13" tabindex="-1"></a><span class="co">#&gt; trt2 0.621386 0.034019 0.554711 0.6881</span></span>
 <span id="cb4-14"><a href="#cb4-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; Contrast     :  h_diff</span></span>
+<span id="cb4-15"><a href="#cb4-15" tabindex="-1"></a><span class="co">#&gt; Contrast     :  difference</span></span>
 <span id="cb4-16"><a href="#cb4-16" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value  Pr(&gt;|z|)    </span></span>
 <span id="cb4-17"><a href="#cb4-17" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  0.224599 0.047711  4.7075 2.508e-06 ***</span></span>
 <span id="cb4-18"><a href="#cb4-18" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  0.265290 0.047534  5.5810 2.391e-08 ***</span></span>
@@ -491,10 +498,10 @@ we need to specify <code>family</code> to be
 <code>MASS::negative.binomial(theta = NA)</code> to use the negative
 binomial model. A fixed <code>theta</code> could be provided if it is
 known.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>dummy_data<span class="sc">$</span>y_count <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="fu">nrow</span>(dummy_data), <span class="at">lambda =</span> <span class="dv">20</span>)</span>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>glm_data<span class="sc">$</span>y_count <span class="ot">&lt;-</span> <span class="fu">rpois</span>(<span class="fu">nrow</span>(glm_data), <span class="at">lambda =</span> <span class="dv">20</span>)</span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="fu">robin_glm</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  y_count <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">data =</span> dummy_data,</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">pb</span>(s1),</span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">family =</span> MASS<span class="sc">::</span><span class="fu">negative.binomial</span>(<span class="at">theta =</span> <span class="dv">1</span>)</span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>)</span>
@@ -503,15 +510,15 @@ known.</p>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Variance Type:  vcovG </span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Marginal Mean: </span></span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;      Estimate  Std.Err    2.5 % 97.5 %</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; pbo  20.05954  0.30825 19.45538 20.664</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; trt1 19.60018  0.32111 18.97081 20.230</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; trt2 20.02415  0.29517 19.44564 20.603</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; pbo  19.66342  0.31706 19.04200 20.285</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; trt1 20.02967  0.32533 19.39204 20.667</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; trt2 19.89905  0.30686 19.29761 20.500</span></span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; Contrast     :  h_diff</span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;                 Estimate   Std.Err Z Value Pr(&gt;|z|)</span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  -0.459361  0.445037 -1.0322   0.3020</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  -0.035388  0.426614 -0.0829   0.9339</span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1  0.423974  0.435775  0.9729   0.3306</span></span></code></pre></div>
+<span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; Contrast     :  difference</span></span>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value Pr(&gt;|z|)</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo   0.36625  0.45426  0.8063   0.4201</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo   0.23563  0.44125  0.5340   0.5933</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 -0.13062  0.44698 -0.2922   0.7701</span></span></code></pre></div>
 </div>
 <div id="using-different-covariate-adaptive-randomization-schema" class="section level2">
 <h2>Using Different Covariate-Adaptive Randomization Schema</h2>
@@ -521,7 +528,7 @@ can use other randomization schema. Currently RobinCar2 supports
 permuted-block randomization, and <code>ps</code> for the Pocock-Simon
 randomization.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">robin_glm</span>(y_b <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
-<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">data =</span> dummy_data,</span>
+<span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">ps</span>(s1),</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">&quot;logit&quot;</span>)</span>
 <span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>)</span>
@@ -534,13 +541,74 @@ randomization.</p>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; trt1 0.580696 0.034418 0.513238 0.6482</span></span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; trt2 0.621386 0.034019 0.554711 0.6881</span></span>
 <span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Contrast     :  h_diff</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Contrast     :  difference</span></span>
 <span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value  Pr(&gt;|z|)    </span></span>
 <span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  0.224599 0.047711  4.7075 2.508e-06 ***</span></span>
 <span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  0.265290 0.047534  5.5810 2.391e-08 ***</span></span>
 <span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 0.040691 0.047941  0.8488     0.396    </span></span>
 <span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
 <span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span></code></pre></div>
+</div>
+<div id="obtain-the-confidence-intervals-for-the-marginal-means-and-contrast" class="section level2">
+<h2>Obtain the Confidence Intervals for the Marginal Means and
+contrast</h2>
+<p>To obtain the confidence interval, we can use <code>confint</code>
+function.</p>
+<p>Given the following model</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a>robin_res <span class="ot">&lt;-</span> <span class="fu">robin_glm</span>(y_b <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">ps</span>(s1),</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  <span class="at">family =</span> <span class="fu">binomial</span>(<span class="at">link =</span> <span class="st">&quot;logit&quot;</span>),</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="at">contrast =</span> <span class="st">&quot;log_risk_ratio&quot;</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a>robin_res</span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; Model        :  y_b ~ treatment * s1 + covar </span></span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; Randomization:  treatment ~ ps(s1)  ( Pocock-Simon )</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Variance Type:  vcovG </span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt; Marginal Mean: </span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;      Estimate  Std.Err    2.5 % 97.5 %</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; pbo  0.356097 0.033599 0.290243 0.4219</span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; trt1 0.580696 0.034418 0.513238 0.6482</span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; trt2 0.621386 0.034019 0.554711 0.6881</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; Contrast     :  log_risk_ratio</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value Pr(&gt;|z|)    </span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  0.489025 0.110617  4.4209 9.83e-06 ***</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  0.556751 0.108532  5.1298 2.90e-07 ***</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 0.067726 0.079934  0.8473   0.3968    </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span></code></pre></div>
+<p>It is easy to obtain the confidence interval matrix for the marginal
+mean, at specified level. If <code>parm</code> is not provided, the
+complete matrix (all treatment groups) will be provided.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">confint</span>(robin_res<span class="sc">$</span>marginal_mean, <span class="at">parm =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">2</span>, <span class="at">level =</span> <span class="fl">0.7</span>)</span>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt;       Estimate      15 %      85 %</span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; pbo  0.3560965 0.3212733 0.3909198</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; trt1 0.5806957 0.5450238 0.6163677</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="fu">confint</span>(robin_res<span class="sc">$</span>marginal_mean, <span class="at">level =</span> <span class="fl">0.7</span>)</span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;       Estimate      15 %      85 %</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt; pbo  0.3560965 0.3212733 0.3909198</span></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; trt1 0.5806957 0.5450238 0.6163677</span></span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; trt2 0.6213865 0.5861284 0.6566445</span></span></code></pre></div>
+<p>Similarly for the contrast, however it has an additional argument
+<code>transform</code> to provide the confidence interval at transformed
+level. Thus, standard error is removed because it does not make sense
+anymore. By default, if the <code>log_risk_ratio</code> or
+<code>log_odds_ratio</code> is used as contrast, the
+<code>confint</code> will transform it back using exponential function.
+You can also specify the <code>transform</code> to be
+<code>identity</code> to avoid the transformation.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a><span class="fu">confint</span>(robin_res<span class="sc">$</span>contrast)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="co">#&gt; The confidence interval is transformed.</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a><span class="co">#&gt;                Estimate     2.5 %   97.5 %</span></span>
+<span id="cb9-4"><a href="#cb9-4" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  1.630726 1.3128756 2.025528</span></span>
+<span id="cb9-5"><a href="#cb9-5" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  1.744994 1.4106235 2.158624</span></span>
+<span id="cb9-6"><a href="#cb9-6" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 1.070072 0.9148996 1.251563</span></span>
+<span id="cb9-7"><a href="#cb9-7" tabindex="-1"></a><span class="fu">confint</span>(robin_res<span class="sc">$</span>contrast, <span class="at">transform =</span> identity)</span>
+<span id="cb9-8"><a href="#cb9-8" tabindex="-1"></a><span class="co">#&gt;                  Estimate      2.5 %    97.5 %</span></span>
+<span id="cb9-9"><a href="#cb9-9" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  0.48902507  0.2722198 0.7058303</span></span>
+<span id="cb9-10"><a href="#cb9-10" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  0.55675135  0.3440318 0.7694709</span></span>
+<span id="cb9-11"><a href="#cb9-11" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 0.06772628 -0.0889410 0.2243936</span></span></code></pre></div>
 </div>
 </div>
 
