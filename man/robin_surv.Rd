@@ -17,11 +17,12 @@ robin_surv(
 \arguments{
 \item{formula}{(\code{formula}) A formula of analysis, of the form
 \code{Surv(time, status) ~ covariates}. (If no covariates should be adjusted for, use \code{1} instead
-on the right hand side.)}
+on the right hand side. The intercept must not be removed.)}
 
 \item{data}{(\code{data.frame}) Input data frame.}
 
-\item{treatment}{(\code{formula}) A formula of treatment assignment or assignment by stratification.}
+\item{treatment}{(\code{formula}) A formula of treatment assignment or assignment by stratification, of the form
+\code{treatment ~ strata}. (If no stratification should be adjusted for, use \code{1} instead on the right hand side.)}
 
 \item{comparisons}{(\code{list}) An optional list of comparisons between treatment levels to be performed,
 see details. By default, all pairwise comparisons are performed automatically.}
@@ -54,18 +55,18 @@ So for example if you would like to compare level 3 with level 1, and also level
 \code{comparisons = list(c(3, 3), c(1, 2))}
 }
 \examples{
-# Adjusted for covariates meal.cal and age and adjusted for stratification by sex:
+# Adjusted for covariates meal.cal and age and adjusted for stratification by strata:
 robin_surv(
   formula = Surv(time, status) ~ meal.cal + age,
   data = surv_data,
   treatment = sex ~ strata
 )
 
-# Adjusted for stratification by strata but not for covariates:
+# Adjusted for stratification by strata and ecog but not for covariates:
 robin_surv(
   formula = Surv(time, status) ~ 1,
   data = surv_data,
-  treatment = sex ~ strata
+  treatment = sex ~ strata + ecog
 )
 
 # Unadjusted for covariates and stratification:

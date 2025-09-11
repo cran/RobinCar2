@@ -2,8 +2,8 @@ Type: Package
 Package: RobinCar2
 Title: ROBust INference for Covariate Adjustment in Randomized Clinical
         Trials
-Version: 0.2.0
-Date: 2025-09-09
+Version: 0.2.1
+Date: 2025-09-11
 Authors@R: 
     c(
       person("Liming", "Li", , "liming.li1@astrazeneca.com", role = c("aut", "cre"), comment = c(ORCID = "0009-0008-6870-0878")),
@@ -18,6 +18,7 @@ Authors@R:
       person("Merck Sharp & Dohme, Inc.", role = c("cph", "fnd")),
       person("AstraZeneca plc", role = c("cph", "fnd")),
       person("Eli Lilly and Company", role = c("cph", "fnd")),
+      person("Novartis Pharma AG", role = c("cph", "fnd")),
       person("The University of Washington", role = c("cph", "fnd"))
     )
 Description: Performs robust estimation and inference when using covariate adjustment
@@ -41,7 +42,7 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.3
 NeedsCompilation: no
-Packaged: 2025-09-09 02:08:05 UTC; root
+Packaged: 2025-09-11 08:41:03 UTC; root
 Author: Liming Li [aut, cre] (ORCID: <https://orcid.org/0009-0008-6870-0878>),
   Marlena Bannick [aut] (ORCID: <https://orcid.org/0000-0001-6279-5978>),
   Daniel Sabanes Bove [aut] (ORCID:
@@ -55,7 +56,8 @@ Author: Liming Li [aut, cre] (ORCID: <https://orcid.org/0009-0008-6870-0878>),
   Merck Sharp & Dohme, Inc. [cph, fnd],
   AstraZeneca plc [cph, fnd],
   Eli Lilly and Company [cph, fnd],
+  Novartis Pharma AG [cph, fnd],
   The University of Washington [cph, fnd]
 Maintainer: Liming Li <liming.li1@astrazeneca.com>
 Repository: CRAN
-Date/Publication: 2025-09-09 07:20:25 UTC
+Date/Publication: 2025-09-11 14:10:02 UTC

@@ -46,6 +46,25 @@ test_that("h_strat_derived_outcome_vals works as expected", {
   expect_identical(unname(sapply(result, nrow)), as.integer(table(surv_data_full$strata)))
 })
 
+test_that("h_strat_derived_outcome_vals works with multiple strata", {
+  surv_data_full <- na.omit(surv_data)
+  result <- h_strat_derived_outcome_vals(
+    theta = 0,
+    df = surv_data_full,
+    treatment = "sex",
+    time = "time",
+    status = "status",
+    strata = c("strata", "ecog"),
+    covariates = c("age", "ph.karno")
+  )
+  expect_list(result, len = 4L, types = "data.frame", any.missing = FALSE)
+  expect_names(names(result), identical.to = c("0.0", "2.0", "3.0", "1.1"))
+  expect_identical(
+    unname(sapply(result, nrow)),
+    as.integer(table(interaction(surv_data_full$strata, surv_data_full$ecog, drop = TRUE)))
+  )
+})
+
 test_that("h_get_lm_input works as expected", {
   set.seed(941)
   df <- data.frame(
@@ -63,6 +82,39 @@ test_that("h_get_lm_input works as expected", {
   expect_list(result[["1"]], len = 2L)
   expect_matrix(result[["1"]][["X"]], ncol = 2L, nrow = 2L)
   expect_numeric(result[["1"]][["y"]], len = 2L)
+})
+
+test_that("h_get_lm_input fails when there is no intercept", {
+  set.seed(941)
+  df <- data.frame(
+    index = 1:5,
+    treatment = factor(c(0, 1, 0, 1, 0)),
+    covariate1 = rnorm(5),
+    covariate2 = rnorm(5),
+    O_hat = rnorm(5)
+  )
+  expect_error(
+    h_get_lm_input(df, model = ~ 0 + covariate1 + covariate2),
+    "Assertion on 'includes_intercept' failed"
+  )
+})
+
+test_that("h_get_lm_input works correctly across treatment levels with character covariates", {
+  set.seed(941)
+  df <- data.frame(
+    index = 1:5,
+    treatment = factor(rep(c(0, 1), each = 5)),
+    # Here we have A, B for treatment 0 only, C, D for treatment 1 only:
+    covariate1 = c("A", "B", "A", "B", "A", "C", "D", "C", "D", "C"),
+    covariate2 = rnorm(5),
+    O_hat = rnorm(5)
+  )
+  result <- h_get_lm_input(df, model = ~ covariate1 + covariate2)
+  expect_list(result, len = 2L)
+  x_cols <- lapply(result, function(lst) colnames(lst[["X"]]))
+  expect_true(identical(x_cols[[1]], x_cols[[2]]))
+  # Note that this case will lead to rank-deficient design matrices, but at least
+  # the user will get an appropriate error message, instead of a wrong result downstream.
 })
 
 test_that("h_get_strat_lm_input works as expected", {

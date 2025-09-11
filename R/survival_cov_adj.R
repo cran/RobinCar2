@@ -19,7 +19,7 @@ h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariate
   assert_string(treatment)
   assert_string(time)
   assert_string(status)
-  assert_character(covariates, min.len = 1L, any.missing = FALSE)
+  assert_character(covariates, min.len = 1L, any.missing = FALSE, unique = TRUE)
   assert_data_frame(df)
   assert_factor(df[[treatment]], n.levels = 2L)
   assert_numeric(df[[status]])
@@ -106,17 +106,15 @@ h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariate
 
 #' @describeIn derived_outcome_vals calculates the derived outcome values for each stratum separately.
 h_strat_derived_outcome_vals <- function(theta, df, treatment, time, status, strata, covariates) {
-  assert_string(strata)
+  assert_character(strata, any.missing = FALSE, min.len = 1L, unique = TRUE)
   assert_data_frame(df)
-  assert_factor(df[[strata]])
+  lapply(df[strata], assert_factor)
 
   assert_true(!any(is.na(df)))
   n <- nrow(df)
 
-  df[[strata]] <- droplevels(df[[strata]])
-  strata_levels <- levels(df[[strata]])
-
-  df_split <- split(df, f = df[[strata]])
+  strata_formula <- paste("~", paste(strata, collapse = "+"))
+  df_split <- split(df, f = as.formula(strata_formula), drop = TRUE)
 
   lapply(
     df_split,
@@ -154,16 +152,24 @@ h_get_lm_input <- function(df, model) {
   assert_subset(c("treatment", "O_hat", all.vars(model)), names(df))
   assert_factor(df$treatment)
 
-  # Add outcome, remove intercept:
-  model <- stats::update(model, O_hat ~ . - 1)
-  df_by_trt <- split(df, f = df$treatment)
+  # Add outcome:
+  model <- stats::update(model, O_hat ~ .)
+  includes_intercept <- attr(stats::terms(model), "intercept") == 1
+  assert_true(includes_intercept)
+
+  # Create overall design matrix and response vector.
+  mf <- stats::model.frame(model, data = df)
+  x <- stats::model.matrix(model, data = mf)
+  assert_true(identical(colnames(x)[1L], "(Intercept)"))
+  x <- x[, -1L, drop = FALSE] # Remove intercept.
+  y <- stats::model.response(mf)
+
+  # Split both design matrix and response vector by treatment arm.
+  index_by_trt <- split(seq_along(y), f = df$treatment)
   lapply(
-    df_by_trt,
-    function(this_df) {
-      mf <- stats::model.frame(model, data = this_df)
-      x <- stats::model.matrix(model, data = mf)
-      y <- stats::model.response(mf)
-      list(X = x, y = y)
+    index_by_trt,
+    function(this_index) {
+      list(X = x[this_index, , drop = FALSE], y = y[this_index])
     }
   )
 }
