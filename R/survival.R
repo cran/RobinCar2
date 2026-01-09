@@ -85,7 +85,8 @@ h_lr_test_via_score <- function(score_fun, ...) {
     sigma_l2 = sigma_l2,
     tau_l = tau_l,
     pval = pval,
-    n = n
+    n = n,
+    give_rand_strat_warning = score_attrs$give_rand_strat_warning
   )
 }
 
@@ -117,7 +118,16 @@ h_lr_test_via_score <- function(score_fun, ...) {
 #' - `test_sigma_l2`: The variance of the log-rank statistic used in the log-rank test.
 #'
 #' @keywords internal
-robin_surv_comparison <- function(score_fun, vars, data, exp_level, control_level, unadj_score_fun = NULL, ...) {
+robin_surv_comparison <- function(
+  score_fun,
+  vars,
+  data,
+  exp_level,
+  control_level,
+  contrast,
+  unadj_score_fun = NULL,
+  ...
+) {
   assert_list(vars)
   assert_names(names(vars), must.include = c("levels", "treatment", "covariates"))
   assert_character(vars$levels, min.len = 2L)
@@ -127,6 +137,7 @@ robin_surv_comparison <- function(score_fun, vars, data, exp_level, control_leve
   assert_count(exp_level)
   assert_count(control_level)
   assert_true(exp_level != control_level)
+  assert_string(contrast)
 
   # Subset data to the two treatment arms of interest.
   trt_levels <- vars$levels[c(control_level, exp_level)]
@@ -145,23 +156,33 @@ robin_surv_comparison <- function(score_fun, vars, data, exp_level, control_leve
   # Perform the log-rank test via the score function.
   test_result <- do.call(h_lr_test_via_score, args)
 
-  # If an unadjusted score function is provided, use it to estimate the log hazard ratio first.
-  if (!is.null(unadj_score_fun)) {
-    assert_function(unadj_score_fun)
-    assert_true(length(vars$covariates) > 0)
-    args_to_drop <- c("model", "hr_se_plugin_adjusted")
-    unadj_args <- args[!(names(args) %in% args_to_drop)]
-    unadj_args$score_fun <- unadj_score_fun
-    # Get theta_hat from the unadjusted score function.
-    unadj_hr_result <- do.call(h_log_hr_est_via_score, unadj_args)
-    # Add this to the arguments for the adjusted score function call below.
-    args$theta_hat <- unadj_hr_result$theta
+  # Estimate the log hazard ratio via the score function, if requested.
+  hr_result <- if (contrast == "hazardratio") {
+    # If an unadjusted score function is provided, use it to estimate the log hazard ratio first.
+    if (!is.null(unadj_score_fun)) {
+      assert_function(unadj_score_fun)
+      assert_true(length(vars$covariates) > 0)
+      args_to_drop <- c("model", "hr_se_plugin_adjusted", "check_rand_strat_warning")
+      unadj_args <- args[!(names(args) %in% args_to_drop)]
+      unadj_args$score_fun <- unadj_score_fun
+      # Get theta_hat from the unadjusted score function.
+      unadj_hr_result <- do.call(h_log_hr_est_via_score, unadj_args)
+      # Add this to the arguments for the adjusted score function call below.
+      args$theta_hat <- unadj_hr_result$theta
+    } else {
+      # We enforce to have no covariates in this case.
+      assert_true(length(vars$covariates) == 0L)
+    }
+    # Estimate the log hazard ratio via the score function.
+    do.call(h_log_hr_est_via_score, args)
   } else {
-    # We enforce to have no covariates in this case.
-    assert_true(length(vars$covariates) == 0L)
+    list(
+      theta = NA_real_,
+      se = NA_real_,
+      n = NA_integer_,
+      sigma_l2 = NA_real_
+    )
   }
-  # Estimate the log hazard ratio via the score function.
-  hr_result <- do.call(h_log_hr_est_via_score, args)
 
   list(
     estimate = hr_result$theta,
@@ -172,7 +193,8 @@ robin_surv_comparison <- function(score_fun, vars, data, exp_level, control_leve
     p_value = test_result$pval,
     test_score = test_result$u_l,
     test_n = test_result$n,
-    test_sigma_l2 = test_result$sigma_l2
+    test_sigma_l2 = test_result$sigma_l2,
+    give_rand_strat_warning = test_result$give_rand_strat_warning
   )
 }
 
@@ -190,39 +212,59 @@ NULL
 
 #' @describeIn survival_comparison_functions without strata and without covariates, based on
 #'   [h_lr_score_no_strata_no_cov()].
-robin_surv_no_strata_no_cov <- function(vars, data, exp_level, control_level) {
+robin_surv_no_strata_no_cov <- function(
+  vars,
+  data,
+  exp_level,
+  control_level,
+  contrast,
+  check_rand_strat_warning = FALSE
+) {
   robin_surv_comparison(
     score_fun = h_lr_score_no_strata_no_cov,
     vars = vars,
     data = data,
     exp_level = exp_level,
     control_level = control_level,
+    contrast = contrast,
     treatment = vars$treatment,
     time = vars$time,
-    status = vars$status
+    status = vars$status,
+    randomization_strata = vars$randomization_strata,
+    check_rand_strat_warning = check_rand_strat_warning
   )
 }
 
 #' @describeIn survival_comparison_functions without strata and without covariates, based on
 #'   [h_lr_score_strat()].
-robin_surv_strata <- function(vars, data, exp_level, control_level) {
+robin_surv_strata <- function(
+  vars,
+  data,
+  exp_level,
+  control_level,
+  contrast,
+  check_rand_strat_warning = FALSE
+) {
   robin_surv_comparison(
     score_fun = h_lr_score_strat,
     vars = vars,
     data = data,
     exp_level = exp_level,
     control_level = control_level,
+    contrast = contrast,
     treatment = vars$treatment,
     time = vars$time,
     status = vars$status,
-    strata = vars$strata
+    strata = vars$strata,
+    randomization_strata = vars$randomization_strata,
+    check_rand_strat_warning = check_rand_strat_warning
   )
 }
 
 #' @describeIn survival_comparison_functions without strata and without covariates, based on
 #'   [h_lr_score_cov()] and [h_lr_score_no_strata_no_cov()] (which is used to find the unadjusted
 #'   log hazard ratio estimate).
-robin_surv_cov <- function(vars, data, exp_level, control_level, ...) {
+robin_surv_cov <- function(vars, data, exp_level, control_level, contrast, ...) {
   robin_surv_comparison(
     score_fun = h_lr_score_cov,
     unadj_score_fun = h_lr_score_no_strata_no_cov,
@@ -230,10 +272,12 @@ robin_surv_cov <- function(vars, data, exp_level, control_level, ...) {
     data = data,
     exp_level = exp_level,
     control_level = control_level,
+    contrast = contrast,
     treatment = vars$treatment,
     time = vars$time,
     status = vars$status,
     model = vars$model,
+    randomization_strata = vars$randomization_strata,
     ...
   )
 }
@@ -241,7 +285,7 @@ robin_surv_cov <- function(vars, data, exp_level, control_level, ...) {
 #' @describeIn survival_comparison_functions with strata and covariates, based on
 #'   [h_lr_score_strat_cov()] and [h_lr_score_strat()] (which is used to find the unadjusted
 #'   log hazard ratio estimate).
-robin_surv_strata_cov <- function(vars, data, exp_level, control_level, ...) {
+robin_surv_strata_cov <- function(vars, data, exp_level, control_level, contrast, ...) {
   robin_surv_comparison(
     score_fun = h_lr_score_strat_cov,
     unadj_score_fun = h_lr_score_strat,
@@ -249,11 +293,13 @@ robin_surv_strata_cov <- function(vars, data, exp_level, control_level, ...) {
     data = data,
     exp_level = exp_level,
     control_level = control_level,
+    contrast = contrast,
     treatment = vars$treatment,
     time = vars$time,
     status = vars$status,
     strata = vars$strata,
     model = vars$model,
+    randomization_strata = vars$randomization_strata,
     ...
   )
 }
@@ -357,15 +403,18 @@ h_events_table <- function(data, vars) {
 #' for covariates and a stratification factor.
 #'
 #' @param formula (`formula`) A formula of analysis, of the form
-#'   `Surv(time, status) ~ covariates`. (If no covariates should be adjusted for, use `1` instead
-#'   on the right hand side. The intercept must not be removed.)
+#'   `Surv(time, status) ~ covariates + strata(x, y, z)`.
+#'   If no covariates should be adjusted for, use `1` instead on the right hand side. The intercept must not be removed.
+#'   If no stratification factors should be used for the analysis, do not use `strata()` in the formula.
 #' @param data (`data.frame`) Input data frame.
 #' @param treatment (`formula`) A formula of treatment assignment or assignment by stratification, of the form
-#'   `treatment ~ strata`. (If no stratification should be adjusted for, use `1` instead on the right hand side.)
+#'   `treatment ~ scheme(vars)`. Note that currently the randomization scheme is not used in the analysis. However,
+#'   any variables that were used in the randomization scheme must be included in the model formula,
+#'   either as covariates, or as `strata()`.
 #' @param comparisons (`list`) An optional list of comparisons between treatment levels to be performed,
 #'   see details. By default, all pairwise comparisons are performed automatically.
 #' @param contrast (`character(1)`) The contrast statistic to be used, currently only `"hazardratio"`
-#'   is supported.
+#'   is supported. Can be disabled by specifying `"none"`, in which case only the log-rank test is performed.
 #' @param test (`character(1)`) The test to be used, currently only `"logrank"` is supported.
 #' @param ... Additional arguments passed to the survival analysis functions, in particular `hr_se_plugin_adjusted`
 #'   (please see [here][survival_score_functions] for details).
@@ -384,35 +433,37 @@ h_events_table <- function(data, vars) {
 #' `comparisons = list(c(3, 3), c(1, 2))`
 #'
 #' @export
+#'
 #' @examples
 #' # Adjusted for covariates meal.cal and age and adjusted for stratification by strata:
 #' robin_surv(
-#'   formula = Surv(time, status) ~ meal.cal + age,
+#'   formula = Surv(time, status) ~ meal.cal + age + strata(strata),
 #'   data = surv_data,
-#'   treatment = sex ~ strata
+#'   treatment = sex ~ pb(strata)
 #' )
 #'
 #' # Adjusted for stratification by strata and ecog but not for covariates:
 #' robin_surv(
-#'   formula = Surv(time, status) ~ 1,
+#'   formula = Surv(time, status) ~ 1 + strata(strata, ecog),
 #'   data = surv_data,
-#'   treatment = sex ~ strata + ecog
+#'   treatment = sex ~ sr(1)
 #' )
 #'
 #' # Unadjusted for covariates and stratification:
 #' robin_surv(
 #'   formula = Surv(time, status) ~ 1,
 #'   data = surv_data,
-#'   treatment = sex ~ 1
+#'   treatment = sex ~ sr(1)
 #' )
 robin_surv <- function(
-    formula,
-    data,
-    treatment,
-    comparisons,
-    contrast = "hazardratio",
-    test = "logrank",
-    ...) {
+  formula,
+  data,
+  treatment,
+  comparisons,
+  contrast = c("hazardratio", "none"),
+  test = "logrank",
+  ...
+) {
   attr(formula, ".Environment") <- environment()
   assert_formula(formula)
   assert_data_frame(data)
@@ -425,7 +476,15 @@ robin_surv <- function(
   input <- h_prep_survival_input(formula, data, treatment)
 
   # Subset to complete records here, so that we can use this for the strata/events tabulation.
-  data <- stats::na.omit(input$data[c(input$treatment, input$time, input$status, input$strata, input$covariates)])
+  data_columns_needed <- unique(c(
+    input$treatment,
+    input$time,
+    input$status,
+    input$strata,
+    input$covariates,
+    input$randomization_strata
+  ))
+  data <- stats::na.omit(input$data[data_columns_needed])
   events_table <- h_events_table(data, input)
 
   has_strata <- length(input$strata) > 0
@@ -453,20 +512,59 @@ robin_surv <- function(
   assert_integer(comparisons[[1]], lower = 1L, upper = length(input$levels))
   assert_integer(comparisons[[2]], lower = 1L, upper = length(input$levels))
 
+  # Variable to keep track whether a warning about insufficient inclusion of
+  # randomization strata in the analysis model has already been required in a comparison.
+  # We want to avoid checking for the need of a warning, or giving a warning,
+  # multiple times.
+  give_rand_strat_warning <- FALSE
+
   estimates <- lapply(
     seq_len(n_comparisons),
     function(i) {
       exp_level <- comparisons[[1]][i]
       control_level <- comparisons[[2]][i]
-      calc_function(
+      result <- calc_function(
         vars = input,
         data = data,
         exp_level = exp_level,
         control_level = control_level,
+        contrast = contrast,
+        check_rand_strat_warning = !give_rand_strat_warning,
         ...
       )
+      if (!give_rand_strat_warning) {
+        # Only update if we have checked for it in this iteration, otherwise
+        # we could overwrite a TRUE value with the default FALSE.
+        give_rand_strat_warning <<- result$give_rand_strat_warning
+      }
+      result
     }
   )
+
+  if (give_rand_strat_warning) {
+    missing_vars <- setdiff(input$randomization_strata, c(input$covariates, input$strata))
+    cov_string <- if (length(missing_vars) > 1) {
+      paste0("interaction(", toString(missing_vars), ")")
+    } else {
+      missing_vars
+    }
+    strata_string <- paste0("strata(", toString(missing_vars), ")")
+    warning(
+      paste0(
+        "It looks like you have not included all of the variables that were used ",
+        "during randomization in your analysis `formula`. You can either:\n\n",
+        "a. adjust for all joint levels in your `formula` using `+ ",
+        cov_string,
+        "` or\n",
+        "b. perform a stratified test by adding to your `formula` the term `+ ",
+        strata_string,
+        "`\n\n",
+        "NOTE: (b) changes the null hypothesis from your current model specification. ",
+        "Please see the vignette `robincar-survival` for details."
+      ),
+      call. = FALSE
+    )
+  }
 
   result <- list(
     model = formula,
@@ -488,7 +586,10 @@ robin_surv <- function(
     test_n = sapply(estimates, "[[", "test_n"),
     test_sigma_l2 = sapply(estimates, "[[", "test_sigma_l2")
   )
-  result$log_hr_coef_mat <- h_log_hr_coef_mat(result)
+
+  if (contrast == "hazardratio") {
+    result$log_hr_coef_mat <- h_log_hr_coef_mat(result)
+  }
   result$test_mat <- h_test_mat(result)
 
   class(result) <- "surv_effect"

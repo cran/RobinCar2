@@ -2,8 +2,8 @@ Type: Package
 Package: RobinCar2
 Title: ROBust INference for Covariate Adjustment in Randomized Clinical
         Trials
-Version: 0.2.1
-Date: 2025-09-11
+Version: 0.2.2
+Date: 2026-01-09
 Authors@R: 
     c(
       person("Liming", "Li", , "liming.li1@astrazeneca.com", role = c("aut", "cre"), comment = c(ORCID = "0009-0008-6870-0878")),
@@ -42,7 +42,7 @@ Language: en-US
 LazyData: true
 RoxygenNote: 7.3.3
 NeedsCompilation: no
-Packaged: 2025-09-11 08:41:03 UTC; root
+Packaged: 2026-01-09 02:59:08 UTC; root
 Author: Liming Li [aut, cre] (ORCID: <https://orcid.org/0009-0008-6870-0878>),
   Marlena Bannick [aut] (ORCID: <https://orcid.org/0000-0001-6279-5978>),
   Daniel Sabanes Bove [aut] (ORCID:
@@ -60,4 +60,4 @@ Author: Liming Li [aut, cre] (ORCID: <https://orcid.org/0009-0008-6870-0878>),
   The University of Washington [cph, fnd]
 Maintainer: Liming Li <liming.li1@astrazeneca.com>
 Repository: CRAN
-Date/Publication: 2025-09-11 14:10:02 UTC
+Date/Publication: 2026-01-09 06:50:02 UTC

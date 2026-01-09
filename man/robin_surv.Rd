@@ -9,26 +9,29 @@ robin_surv(
   data,
   treatment,
   comparisons,
-  contrast = "hazardratio",
+  contrast = c("hazardratio", "none"),
   test = "logrank",
   ...
 )
 }
 \arguments{
 \item{formula}{(\code{formula}) A formula of analysis, of the form
-\code{Surv(time, status) ~ covariates}. (If no covariates should be adjusted for, use \code{1} instead
-on the right hand side. The intercept must not be removed.)}
+\code{Surv(time, status) ~ covariates + strata(x, y, z)}.
+If no covariates should be adjusted for, use \code{1} instead on the right hand side. The intercept must not be removed.
+If no stratification factors should be used for the analysis, do not use \code{strata()} in the formula.}
 
 \item{data}{(\code{data.frame}) Input data frame.}
 
 \item{treatment}{(\code{formula}) A formula of treatment assignment or assignment by stratification, of the form
-\code{treatment ~ strata}. (If no stratification should be adjusted for, use \code{1} instead on the right hand side.)}
+\code{treatment ~ scheme(vars)}. Note that currently the randomization scheme is not used in the analysis. However,
+any variables that were used in the randomization scheme must be included in the model formula,
+either as covariates, or as \code{strata()}.}
 
 \item{comparisons}{(\code{list}) An optional list of comparisons between treatment levels to be performed,
 see details. By default, all pairwise comparisons are performed automatically.}
 
 \item{contrast}{(\code{character(1)}) The contrast statistic to be used, currently only \code{"hazardratio"}
-is supported.}
+is supported. Can be disabled by specifying \code{"none"}, in which case only the log-rank test is performed.}
 
 \item{test}{(\code{character(1)}) The test to be used, currently only \code{"logrank"} is supported.}
 
@@ -57,23 +60,23 @@ So for example if you would like to compare level 3 with level 1, and also level
 \examples{
 # Adjusted for covariates meal.cal and age and adjusted for stratification by strata:
 robin_surv(
-  formula = Surv(time, status) ~ meal.cal + age,
+  formula = Surv(time, status) ~ meal.cal + age + strata(strata),
   data = surv_data,
-  treatment = sex ~ strata
+  treatment = sex ~ pb(strata)
 )
 
 # Adjusted for stratification by strata and ecog but not for covariates:
 robin_surv(
-  formula = Surv(time, status) ~ 1,
+  formula = Surv(time, status) ~ 1 + strata(strata, ecog),
   data = surv_data,
-  treatment = sex ~ strata + ecog
+  treatment = sex ~ sr(1)
 )
 
 # Unadjusted for covariates and stratification:
 robin_surv(
   formula = Surv(time, status) ~ 1,
   data = surv_data,
-  treatment = sex ~ 1
+  treatment = sex ~ sr(1)
 )
 }
 \seealso{

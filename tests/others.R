@@ -10,7 +10,7 @@ result <- RobinCar2:::h_prep_survival_input(
   # We have another restriction here to avoid ambiguity, therefore
   # need to remove the time and status columns from the data.
   data = subset(surv_data, select = -c(time, status)),
-  treatment = sex ~ 1
+  treatment = sex ~ sr(1)
 )
 expected <- list(
   data = cbind(
@@ -20,8 +20,9 @@ expected <- list(
   time = "time",
   status = "status",
   treatment = "sex",
+  randomization_strata = character(),
   strata = character(),
-  schema = "sp",
+  schema = "sr",
   covariates = character(),
   model = ~1,
   n_levels = 2L,

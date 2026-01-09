@@ -5,9 +5,9 @@
 #'
 #' @examples
 #' x <- robin_surv(
-#'   formula = Surv(time, status) ~ meal.cal + age,
+#'   formula = Surv(time, status) ~ meal.cal + age + strata(strata),
 #'   data = surv_data,
-#'   treatment = sex ~ strata
+#'   treatment = sex ~ pb(strata)
 #' )
 NULL
 
@@ -16,30 +16,63 @@ NULL
 #' @examples
 #' print(x)
 print.surv_effect <- function(x, ...) {
-  cat("Model        : ", deparse(as.formula(x$model)), "\n")
+  cat("Model        : ", deparse(as.formula(x$model)), "\n", sep = "")
 
   cat(
     "Randomization: ",
     deparse(x$randomization),
     " (",
     randomization_schema$schema[randomization_schema$id == x$schema],
-    ")\n"
+    ")\n",
+    sep = ""
   )
-  contr_type <- switch(x$contrast,
-    hazardratio = "Log Hazard ratio"
-  )
-  cat(sprintf("\nContrast     :  %s\n\n", contr_type))
 
-  stats::printCoefmat(
-    x$log_hr_coef_mat
+  strata_variables <- x$vars$strata
+  uses_stratification <- length(strata_variables) > 0
+  if (uses_stratification) {
+    cat("Stratification variables: ", toString(strata_variables), "\n")
+  }
+
+  covariates <- x$vars$covariates
+  uses_covariates <- length(covariates) > 0
+  if (uses_covariates) {
+    cat(
+      "Covariates adjusted for: ",
+      toString(covariates),
+      " (including interactions with ",
+      x$vars$treatment,
+      ")\n",
+      sep = ""
+    )
+  }
+
+  contr_type <- switch(x$contrast,
+    hazardratio = paste0(
+      if (uses_covariates) "Covariate-adjusted ",
+      if (uses_stratification) "Stratified ",
+      "Log Hazard Ratio"
+    ),
+    none = "None"
   )
+  cat(sprintf("\nContrast     : %s\n", contr_type), sep = "")
+
+  if (x$contrast == "hazardratio") {
+    cat("\n")
+    stats::printCoefmat(
+      x$log_hr_coef_mat
+    )
+  }
 
   cat("\n")
 
   test_type <- switch(x$test,
-    logrank = "Log-Rank"
+    logrank = paste0(
+      if (uses_covariates) "Covariate-adjusted ",
+      if (uses_stratification) "Stratified ",
+      "Log-Rank"
+    )
   )
-  cat(sprintf("Test         :  %s\n\n", test_type))
+  cat(sprintf("Test         : %s\n\n", test_type), sep = "")
 
   stats::printCoefmat(
     x$test_mat,
@@ -75,5 +108,11 @@ table.surv_effect <- function(x, ...) {
 #' @rdname confint
 #' @export
 confint.surv_effect <- function(object, parm, level = 0.95, transform, ...) {
-  h_confint(object$log_hr_coef_mat, parm = parm, level = level, transform = transform, ...)
+  if (object$contrast == "hazardratio") {
+    h_confint(object$log_hr_coef_mat, parm = parm, level = level, transform = transform, ...)
+  } else {
+    stop(
+      "No contrast was estimated; confidence interval is not available."
+    )
+  }
 }

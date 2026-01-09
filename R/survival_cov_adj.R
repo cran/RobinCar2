@@ -5,28 +5,33 @@
 #' @inheritParams survival_score_functions
 #' @param covariates (`character`) The column names in `df` to be used for covariate adjustment.
 #' @return A data frame containing the same data as the input `df`, but restructured with standardized column names
-#'   `index`, `treatment`, `time`, `status`, the covariates, and an additional column `O_hat` containing the
-#'   derived outcome values. For the stratified version, the list of data frames is returned, one for each stratum.
-#' @details Please note that the `covariates` must not include `index`, `treatment`, `time`, `status`
-#'   to avoid naming conflicts.
+#'   `index`, `treatment`, `time`, `status`, the covariates and randomization stratification variables,
+#'   and an additional column `O_hat` containing the derived outcome values.
+#'   For the stratified version, the computations are done separately by stratum, and
+#'   the resulting `data.frame` contains an additional `.stratum` column indicating the stratum number.
+#' @details Please note that the `covariates` and `randomization_strata` must not include `index`,
+#'   `treatment`, `time`, `status` to avoid naming conflicts.
 #' @keywords internal
 #' @name derived_outcome_vals
 NULL
 
 #' @describeIn derived_outcome_vals calculates the derived outcome values for the overall data set.
-h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariates, n = nrow(df)) {
+h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariates, randomization_strata, n = nrow(df)) {
   assert_number(theta)
   assert_string(treatment)
   assert_string(time)
   assert_string(status)
   assert_character(covariates, min.len = 1L, any.missing = FALSE, unique = TRUE)
+  assert_character(randomization_strata, any.missing = FALSE, unique = TRUE)
   assert_data_frame(df)
   assert_factor(df[[treatment]], n.levels = 2L)
   assert_numeric(df[[status]])
   assert_true(all(df[[status]] %in% c(0, 1)))
   assert_numeric(df[[time]], lower = 0)
-  assert_subset(covariates, names(df))
-  assert_disjunct(covariates, c("index", "treatment", "time", "status", "treatment_numeric", "O_hat"))
+
+  cov_and_rand_strata <- unique(c(covariates, randomization_strata))
+  assert_subset(cov_and_rand_strata, names(df))
+  assert_disjunct(cov_and_rand_strata, c("index", "treatment", "time", "status", "treatment_numeric", "O_hat"))
 
   # Standardize data set format, subset to relevant variables.
   df <- data.frame(
@@ -35,9 +40,9 @@ h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariate
     treatment_numeric = as.numeric(df[[treatment]]) - 1L,
     time = df[[time]],
     status = df[[status]],
-    df[covariates]
+    df[cov_and_rand_strata]
   )
-  assert_true(!any(is.na(df)))
+  assert_true(!anyNA(df))
 
   # Sort by time.
   df <- df[order(df$time), , drop = FALSE]
@@ -100,23 +105,24 @@ h_derived_outcome_vals <- function(theta, df, treatment, time, status, covariate
   }
 
   # Return in original order with relevant columns only.
-  include_cols <- c("index", "treatment", "time", "status", "O_hat", covariates)
+  include_cols <- c("index", "treatment", "time", "status", "O_hat", cov_and_rand_strata)
   df[order(df$index), include_cols, drop = FALSE]
 }
 
 #' @describeIn derived_outcome_vals calculates the derived outcome values for each stratum separately.
-h_strat_derived_outcome_vals <- function(theta, df, treatment, time, status, strata, covariates) {
+h_strat_derived_outcome_vals <- function(theta, df, treatment, time, status, strata, covariates, randomization_strata) {
   assert_character(strata, any.missing = FALSE, min.len = 1L, unique = TRUE)
   assert_data_frame(df)
+  assert_disjunct(names(df), ".stratum")
   lapply(df[strata], assert_factor)
 
-  assert_true(!any(is.na(df)))
+  assert_true(!anyNA(df))
   n <- nrow(df)
 
   strata_formula <- paste("~", paste(strata, collapse = "+"))
   df_split <- split(df, f = as.formula(strata_formula), drop = TRUE)
 
-  lapply(
+  df_with_outcomes_split <- lapply(
     df_split,
     FUN = h_derived_outcome_vals,
     theta = theta,
@@ -124,8 +130,19 @@ h_strat_derived_outcome_vals <- function(theta, df, treatment, time, status, str
     time = time,
     status = status,
     covariates = covariates,
+    randomization_strata = randomization_strata,
     n = n
   )
+  strata_number <- seq_along(df_with_outcomes_split)
+  df_with_outcomes_split <- Map(
+    function(df_stratum, stratum_number) {
+      df_stratum$.stratum <- stratum_number
+      df_stratum
+    },
+    df_with_outcomes_split,
+    strata_number
+  )
+  do.call(rbind, df_with_outcomes_split)
 }
 
 #' Get Linear Model Input Data
@@ -134,12 +151,12 @@ h_strat_derived_outcome_vals <- function(theta, df, treatment, time, status, str
 #'
 #' @param df (`data.frame`) Including the covariates needed for the `model`, as well as the derived outcome `O_hat`
 #'   and the `treatment` factor.
-#' @param df_split (`list`) A list of data frames, one for each stratum, as returned by
+#' @param df_with_stratum (`data.frame`) A data frame with an additional column for the stratum, as returned by
 #'   [h_strat_derived_outcome_vals()].
 #' @param model (`formula`) The right-hand side only model formula.
 #' @return A list containing for each element of the `treatment` factor a list with the
-#'   corresponding model matrix `X` and the response vector `y`. For the stratified version, a list of such
-#'   lists is returned, one for each stratum.
+#'   corresponding model matrix `X` and the response vector `y`. For the stratified version,
+#'   the model matrix `X` includes the `.stratum` column.
 #' @keywords internal
 #' @name get_lm_input
 NULL
@@ -174,31 +191,40 @@ h_get_lm_input <- function(df, model) {
   )
 }
 
-#' @describeIn get_lm_input Get the linear model input data for each stratum separately.
-h_get_strat_lm_input <- function(df_split, model) {
-  assert_list(df_split, types = "data.frame")
-  lapply(df_split, h_get_lm_input, model = model)
+#' @describeIn get_lm_input Get the linear model input data with attached stratum column.
+h_get_strat_lm_input <- function(df_with_stratum, model) {
+  assert_data_frame(df_with_stratum)
+  assert_subset(".stratum", names(df_with_stratum))
+  model_with_stratum <- stats::update(model, ~ . + .stratum) # Important: no left-hand side.
+  h_get_lm_input(df = df_with_stratum, model = model_with_stratum)
 }
 
-#' Calculate Coefficient Estimates from Linear Model Input
+#' Calculate Coefficient Estimates and Corresponding Residuals from Linear Model Input
 #'
 #' Calculate the coefficient estimates for each treatment arm from the linear model input data.
+#' Also returns the corresponding residuals.
 #'
 #' @param lm_input (`list`) A list containing the linear model input data for each treatment arm, as returned by
 #'   [h_get_lm_input()].
-#' @param strat_lm_input (`list`) A list of lists, one for each stratum, containing the linear model input data
-#'   for each treatment arm, as returned by [h_get_strat_lm_input()].
-#' @return A list containing the coefficient estimates for each treatment arm.
+#' @param strat_lm_input (`list`) A list containing the linear model input data
+#'   for each treatment arm and including the `.strata` column in the design matrix,
+#'   as returned by [h_get_strat_lm_input()].
+#' @return A list with:
+#'
+#'   - `beta_est`: the coefficient estimates for each treatment arm.
+#'   - `residuals`: the corresponding residuals for each treatment arm.
+#'
 #' @keywords internal
-#' @name get_beta_estimates
+#' @name get_lm_results
 NULL
 
-#' @describeIn get_beta_estimates Calculate the coefficient estimates for the overall data set.
-h_get_beta_estimates <- function(lm_input) {
+#' @describeIn get_lm_results Calculate the coefficient estimates for the overall data set.
+h_get_lm_results <- function(lm_input) {
   assert_list(lm_input, types = "list")
 
   # Fit the model separately for each treatment arm.
   beta_est <- list()
+  residuals <- list()
 
   for (group in names(lm_input)) {
     assert_matrix(lm_input[[group]]$X, any.missing = FALSE)
@@ -218,41 +244,62 @@ h_get_beta_estimates <- function(lm_input) {
 
     # Save the coefficients.
     beta_est[[group]] <- lm_fit$coefficients
+
+    # Save the residuals, adjusted for the fact that we centered x and don't
+    # have an intercept in the model.
+    residuals[[group]] <- lm_fit$residuals - mean(y)
   }
 
-  beta_est
+  list(
+    beta_est = beta_est,
+    residuals = residuals
+  )
 }
 
-#' @describeIn get_beta_estimates Calculate the coefficient estimates using the stratified input.
-h_get_strat_beta_estimates <- function(strat_lm_input) {
-  assert_list(strat_lm_input, types = "list")
-  assert_list(strat_lm_input[[1]], types = "list", len = 2L, names = "unique")
-  group_names <- names(strat_lm_input[[1]])
+#' @describeIn get_lm_results Calculate the coefficient estimates using the stratified input.
+h_get_strat_lm_results <- function(strat_lm_input) {
+  assert_list(strat_lm_input, types = "list", len = 2L, names = "unique")
+  group_names <- names(strat_lm_input)
 
   # Get coefficient estimates separately for each treatment arm.
   beta_est <- list()
+  resids <- list()
 
   for (group in group_names) {
+    x <- strat_lm_input[[group]]$X
+    y <- strat_lm_input[[group]]$y
+
+    stratum_col <- match(".stratum", colnames(x))
+    stratum <- as.integer(x[, stratum_col])
+    x <- x[, -stratum_col, drop = FALSE]
+    unique_strata <- unique(stratum)
+
     xtxs <- list()
     xtys <- list()
 
-    for (stratum in names(strat_lm_input)) {
-      # If this group exists in this stratum, save the corresponding cross products
+    for (stratum_index in seq_along(unique_strata)) {
+      # Save the corresponding cross products
       # for this group and stratum.
-      if (group %in% names(strat_lm_input[[stratum]])) {
-        # Get the design matrix for this treatment arm.
-        x <- strat_lm_input[[stratum]][[group]]$X
+      in_stratum <- stratum == unique_strata[stratum_index]
 
-        # Center it.
-        x <- scale(x, center = TRUE, scale = FALSE)
+      # Get the design matrix for this treatment arm.
+      this_x <- x[in_stratum, , drop = FALSE]
 
-        # Get the derived outcome values, the response.
-        y <- strat_lm_input[[stratum]][[group]]$y
+      # Center it.
+      this_x <- scale(this_x, center = TRUE, scale = FALSE)
 
-        # Save the cross products.
-        xtxs[[stratum]] <- crossprod(x)
-        xtys[[stratum]] <- crossprod(x, y)
-      }
+      # Save centered design matrix back (for residual calculation later).
+      x[in_stratum, ] <- this_x
+
+      # Get the derived outcome values, the response.
+      this_y <- y[in_stratum]
+
+      # Save the centered response back (for residual calculation later).
+      y[in_stratum] <- this_y - mean(this_y)
+
+      # Save the cross products.
+      xtxs[[stratum_index]] <- crossprod(this_x)
+      xtys[[stratum_index]] <- crossprod(this_x, this_y)
     }
 
     # Sum across strata.
@@ -261,7 +308,13 @@ h_get_strat_beta_estimates <- function(strat_lm_input) {
 
     # Get the coefficients.
     beta_est[[group]] <- solve(xtx, xty)
+
+    # Compute the residuals.
+    resids[[group]] <- y - as.numeric(x %*% beta_est[[group]])
   }
 
-  beta_est
+  list(
+    beta_est = beta_est,
+    residuals = resids
+  )
 }

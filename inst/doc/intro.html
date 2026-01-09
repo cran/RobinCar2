@@ -437,18 +437,18 @@ interaction.</p>
 <span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>)</span>
 <span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a><span class="co">#&gt; Model        :  y ~ treatment + s1 + covar </span></span>
 <span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a><span class="co">#&gt; Randomization:  treatment ~ pb(s1)  ( Permuted-Block )</span></span>
-<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; Variance Type:  vcovG </span></span>
+<span id="cb3-8"><a href="#cb3-8" tabindex="-1"></a><span class="co">#&gt; Variance Type:  vcovHC </span></span>
 <span id="cb3-9"><a href="#cb3-9" tabindex="-1"></a><span class="co">#&gt; Marginal Mean: </span></span>
 <span id="cb3-10"><a href="#cb3-10" tabindex="-1"></a><span class="co">#&gt;      Estimate  Std.Err    2.5 % 97.5 %</span></span>
-<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; pbo  0.200449 0.067690 0.067779 0.3331</span></span>
-<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; trt1 0.763978 0.075930 0.615158 0.9128</span></span>
-<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; trt2 0.971285 0.076539 0.821271 1.1213</span></span>
+<span id="cb3-11"><a href="#cb3-11" tabindex="-1"></a><span class="co">#&gt; pbo  0.200449 0.066934 0.069261 0.3316</span></span>
+<span id="cb3-12"><a href="#cb3-12" tabindex="-1"></a><span class="co">#&gt; trt1 0.763978 0.075402 0.616194 0.9118</span></span>
+<span id="cb3-13"><a href="#cb3-13" tabindex="-1"></a><span class="co">#&gt; trt2 0.971285 0.076888 0.820586 1.1220</span></span>
 <span id="cb3-14"><a href="#cb3-14" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb3-15"><a href="#cb3-15" tabindex="-1"></a><span class="co">#&gt; Contrast     :  h_diff</span></span>
 <span id="cb3-16"><a href="#cb3-16" tabindex="-1"></a><span class="co">#&gt;                Estimate Std.Err Z Value  Pr(&gt;|z|)    </span></span>
-<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo   0.56353 0.10074  5.5941 2.218e-08 ***</span></span>
-<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo   0.77084 0.10133  7.6074 2.796e-14 ***</span></span>
-<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1  0.20731 0.10683  1.9405   0.05232 .  </span></span>
+<span id="cb3-17"><a href="#cb3-17" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo   0.56353 0.10063  5.5998 2.146e-08 ***</span></span>
+<span id="cb3-18"><a href="#cb3-18" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo   0.77084 0.10183  7.5698 3.738e-14 ***</span></span>
+<span id="cb3-19"><a href="#cb3-19" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1  0.20731 0.10788  1.9217   0.05465 .  </span></span>
 <span id="cb3-20"><a href="#cb3-20" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
 <span id="cb3-21"><a href="#cb3-21" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span></code></pre></div>
 <p>Note that <code>robin_glm</code> can also handle continuous outcomes
@@ -510,25 +510,23 @@ known.</p>
 <span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; Variance Type:  vcovG </span></span>
 <span id="cb5-11"><a href="#cb5-11" tabindex="-1"></a><span class="co">#&gt; Marginal Mean: </span></span>
 <span id="cb5-12"><a href="#cb5-12" tabindex="-1"></a><span class="co">#&gt;      Estimate  Std.Err    2.5 % 97.5 %</span></span>
-<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; pbo  20.57231  0.29026 20.00340 21.141</span></span>
-<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; trt1 19.55433  0.34843 18.87143 20.237</span></span>
-<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; trt2 19.69488  0.30317 19.10069 20.289</span></span>
+<span id="cb5-13"><a href="#cb5-13" tabindex="-1"></a><span class="co">#&gt; pbo  20.02132  0.32097 19.39222 20.650</span></span>
+<span id="cb5-14"><a href="#cb5-14" tabindex="-1"></a><span class="co">#&gt; trt1 20.12524  0.34330 19.45238 20.798</span></span>
+<span id="cb5-15"><a href="#cb5-15" tabindex="-1"></a><span class="co">#&gt; trt2 19.65412  0.31951 19.02789 20.280</span></span>
 <span id="cb5-16"><a href="#cb5-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-17"><a href="#cb5-17" tabindex="-1"></a><span class="co">#&gt; Contrast     :  difference</span></span>
-<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value Pr(&gt;|z|)  </span></span>
-<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo  -1.01797  0.45312 -2.2466  0.02467 *</span></span>
-<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  -0.87742  0.41984 -2.0899  0.03663 *</span></span>
-<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1  0.14055  0.46107  0.3048  0.76049  </span></span>
-<span id="cb5-22"><a href="#cb5-22" tabindex="-1"></a><span class="co">#&gt; ---</span></span>
-<span id="cb5-23"><a href="#cb5-23" tabindex="-1"></a><span class="co">#&gt; Signif. codes:  0 &#39;***&#39; 0.001 &#39;**&#39; 0.01 &#39;*&#39; 0.05 &#39;.&#39; 0.1 &#39; &#39; 1</span></span></code></pre></div>
+<span id="cb5-18"><a href="#cb5-18" tabindex="-1"></a><span class="co">#&gt;                Estimate  Std.Err Z Value Pr(&gt;|z|)</span></span>
+<span id="cb5-19"><a href="#cb5-19" tabindex="-1"></a><span class="co">#&gt; trt1 v.s. pbo   0.10392  0.47055  0.2209   0.8252</span></span>
+<span id="cb5-20"><a href="#cb5-20" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. pbo  -0.36720  0.45334 -0.8100   0.4179</span></span>
+<span id="cb5-21"><a href="#cb5-21" tabindex="-1"></a><span class="co">#&gt; trt2 v.s. trt1 -0.47113  0.46873 -1.0051   0.3148</span></span></code></pre></div>
 </div>
 <div id="using-different-covariate-adaptive-randomization-schema" class="section level2">
 <h2>Using Different Covariate-Adaptive Randomization Schema</h2>
 <p>If the randomization schema is not permuted-block randomization, we
 can use other randomization schema. Currently RobinCar2 supports
-<code>sp</code> for the simple randomization, <code>pb</code> for the
-permuted-block randomization, and <code>ps</code> for the Pocock-Simon
-randomization.</p>
+<code>sr</code> for the simple randomization (this was previously called
+<code>sp</code>), <code>pb</code> for the permuted-block randomization,
+and <code>ps</code> for the Pocock-Simon randomization.</p>
 <div class="sourceCode" id="cb6"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="fu">robin_glm</span>(y_b <span class="sc">~</span> treatment <span class="sc">*</span> s1 <span class="sc">+</span> covar,</span>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>  <span class="at">data =</span> glm_data,</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  <span class="at">treatment =</span> treatment <span class="sc">~</span> <span class="fu">ps</span>(s1),</span>
